@@ -87,3 +87,63 @@ Tab:CreateToggle({
         showArc = Value
     end,
 })
+--// Throw Power Meter + Arc Integration
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+-- meter settings
+local minPower = 50
+local maxPower = 200
+local chargeRate = 80 -- how fast meter fills (units per second)
+local currentPower = minPower
+local charging = false
+
+-- UI setup
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local MeterFrame = Instance.new("Frame", ScreenGui)
+MeterFrame.Size = UDim2.new(0, 200, 0, 25)
+MeterFrame.Position = UDim2.new(0.5, -100, 0.85, 0)
+MeterFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MeterFrame.BorderSizePixel = 2
+MeterFrame.Visible = true
+
+local Fill = Instance.new("Frame", MeterFrame)
+Fill.Size = UDim2.new(0,0,1,0)
+Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+Fill.BorderSizePixel = 0
+
+-- update meter ui
+local function updateUI()
+    local ratio = (currentPower - minPower) / (maxPower - minPower)
+    Fill.Size = UDim2.new(ratio, 0, 1, 0)
+end
+
+-- charging logic
+UIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Q then
+        charging = true
+        currentPower = minPower
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Q then
+        charging = false
+        -- fire throw here (use currentPower)
+        print("Throw with power:", currentPower)
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if charging then
+        currentPower = math.clamp(currentPower + chargeRate * dt, minPower, maxPower)
+    end
+    updateUI()
+end)
+
+--// Hook into Arc (replace throwPower with currentPower)
+-- just drop this line in your arc script:
+-- drawArc(startPos, dir, currentPower)
